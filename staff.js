@@ -163,10 +163,13 @@ localhost:5003/rooms/60f7b3b3b3b3b3b3b3b3b3b3
 */
 // DELETE ROOM API
 app.delete('/rooms/:id', (req, res) => {
-    console.log("INSIDE DELETE ROOM API")
+    console.log("INSIDE DELETE ROOM API");
 
-    // First check if there are any active reservations for this room
-    ReservationModel.find()
+    // Check for active reservations linked to this room
+    ReservationModel.find({
+        roomId: req.params.id,
+        status: { $in: ['pending', 'approved'] } // You can adjust these statuses
+    })
     .then(activeReservations => {
         if (activeReservations.length > 0) {
             const errorMessage = 'Cannot delete room with active reservations';
@@ -180,12 +183,14 @@ app.delete('/rooms/:id', (req, res) => {
         if (!deletedRoom) {
             return res.status(404).send('Room not found');
         }
+
         res.status(200).send({
             message: 'Room deleted successfully',
             deletedRoom: deletedRoom
         });
     })
     .catch(err => {
+        console.error(err);
         res.status(500).send('Error deleting room');
     });
 });
